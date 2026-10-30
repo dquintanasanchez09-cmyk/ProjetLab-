@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProyectaLab — Evaluación de Talento por Competencias</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0F172A; --card: #1E293B; --deep: #0B132B; --text: #F8FAFC;
+      --sec: #94A3B8; --border: #334155; --primary: #0D9488; --accent: #6366F1;
+      --success: #10B981; --warning: #F59E0B; --danger: #EF4444;
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background-color: var(--bg); color: var(--text); }
+    .b-border { border-color: var(--border); }
+    .bg-card { background-color: var(--card); }
+    .bg-deep { background-color: var(--deep); }
+    .c-text { color: var(--text); }
+    .c-sec { color: var(--sec); }
+    .c-pri { color: var(--primary); }
+    .c-acc { color: var(--accent); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; font-weight: 600;
+      border-radius: 0.75rem; padding: 0.625rem 1.25rem; transition: all 0.2s; cursor: pointer; border: none; }
+    .btn-sm { padding: 0.4rem 0.85rem; font-size: 0.875rem; }
+    .btn-xs { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-accent { background: var(--accent); color: #fff; }
+    .btn-accent:hover { opacity: 0.9; }
+    .btn-outline { border: 1px solid var(--border); color: var(--text); background: transparent; }
+    .btn-outline:hover { background: var(--deep); }
+    .input-field { width: 100%; background: var(--deep); border: 1px solid var(--border);
+      color: var(--text); border-radius: 0.75rem; padding: 0.625rem 0.875rem; font-size: 0.875rem; outline: none; }
+    .input-field:focus { border-color: var(--primary); }
+    .tab-btn { padding: 0.85rem 1.2rem; font-weight: 600; font-size: 0.875rem; color: var(--sec);
+      border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; background: none; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .badge-status { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.65rem;
+      border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; }
+    .badge-verified { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid var(--success); }
+    .badge-review { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid var(--warning); }
+    .badge-rejected { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid var(--danger); }
+    .badge-neutral { background: rgba(148,163,184,0.15); color: var(--sec); border: 1px solid var(--border); }
+    #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999;
+      display: flex; flex-direction: column; gap: 0.5rem; }
+    .toast { padding: 0.75rem 1.25rem; border-radius: 0.75rem; background: var(--card);
+      border: 1px solid var(--border); color: var(--text); font-size: 0.875rem;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
+    .toast-success { border-color: var(--success); }
+    .toast-error { border-color: var(--danger); }
+    .toast-info { border-color: var(--accent); }
+    .q-card { background: var(--card); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; }
+    .crit { font-size: 11px; line-height: 1.5; }
+    .crit-good { color: var(--success); }
+    .crit-bad { color: var(--danger); }
+    .progress-bar { height: 4px; background: var(--deep); border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--primary); transition: width 0.3s; }
+    .score-ring { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-weight: 800; font-size: 0.95rem; flex-shrink: 0; }
+    .signal-tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 0.35rem;
+      font-size: 10px; font-weight: 700; margin: 0.1rem 0.15rem 0 0; }
+    .sig-pos { background: rgba(16,185,129,0.15); color: var(--success); }
+    .sig-neg { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .sig-neu { background: rgba(148,163,184,0.15); color: var(--sec); }
+    .lock-screen { display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 3rem 1.5rem; text-align: center; gap: 1rem; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <div id="toast-container"></div>
+
+  <header class="bg-card border-b b-border px-6 py-3 flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center font-black text-white text-lg">P</div>
+      <div>
+        <h1 class="font-extrabold text-base tracking-tight c-text">ProyectaLab</h1>
+        <p class="text-[11px] c-sec">Evaluación de talento por competencias reales</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="mode-badge" class="badge-status badge-review">Modo candidato</span>
+      <button onclick="toggleMode()" class="btn btn-outline btn-xs">
+        <i class="fas fa-user-shield mr-1"></i> <span id="mode-btn-label">Entrar como evaluador</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="bg-card border-b b-border px-6 flex gap-2 overflow-x-auto">
+    <button class="tab-btn active" data-tab="tab-test" onclick="switchTab(this)">
+      <i class="fas fa-clipboard-check mr-2"></i>Prueba
+    </button>
+    <button class="tab-btn" data-tab="tab-results" onclick="switchTab(this)">
+      <i class="fas fa-chart-simple mr-2"></i>Resultados
+    </button>
+    <button class="tab-btn" data-tab="tab-profile" onclick="switchTab(this)">
+      <i class="fas fa-id-card mr-2"></i>Mi Perfil
+    </button>
+    <button class="tab-btn" data-tab="tab-about" onclick="switchTab(this)">
+      <i class="fas fa-circle-info mr-2"></i>Cómo funciona
+    </button>
+  </div>
+
+  <main class="flex-1 max-w-5xl w-full mx-auto">
+
+    <!-- ===== PESTAÑA: PRUEBA ===== -->
+    <div id="tab-test" class="tab-panel active p-6 space-y-6">
+      <div class="bg-deep p-6 rounded-2xl border b-border space-y-2">
+        <h2 class="text-lg font-extrabold c-text">Prueba de Atención al Cliente</h2>
+        <p class="text-xs c-sec">
+          8 situaciones reales del puesto. No hay respuestas de memoria: se evalúa cómo decides.
+          Tiempo estimado: 20 minutos.
+        </p>
+      </div>
+
+      <div id="test-identify" class="bg-card p-6 rounded-2xl border b-border space-y-4">
+        <h3 class="text-sm font-bold c-text"><i class="fas fa-user mr-2 c-pri"></i>Identificación</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-bold c-text block mb-1">Nombre completo *</label>
+            <input id="test-name" type="text" class="input-field" placeholder="Tu nombre">
+          </div>
+          <div>
+            <label class="text-xs font-bold c-text block mb-1">Cédula / Documento *</label>
+            <input id="test-id" type="text" class="input-field" placeholder="V-12345678">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-bold c-text block mb-1">Correo (opcional)</label>
+          <input id="test-email" type="email" class="input-field" placeholder="tu@correo.com">
+        </div>
+        <button onclick="startTest()" class="btn btn-primary w-full sm:w-auto">
+          Comenzar prueba <i class="fas fa-arrow-right ml-2"></i>
+        </button>
+      </div>
+
+      <div id="test-runner" class="hidden space-y-4">
+        <div class="bg-card p-4 rounded-xl border b-border space-y-2 sticky top-[57px] z-40">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold c-text" id="progress-label">Pregunta 1 de 8</span>
+            <span class="c-sec" id="progress-count">0 respondidas</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+        </div>
+        <form id="test-form" onsubmit="submitTest(event)" class="space-y-4"></form>
+        <button type="button" onclick="submitTest(new Event('submit'))" class="btn btn-primary w-full">
+          <i class="fas fa-paper-plane mr-2"></i> Enviar prueba
+        </button>
+      </div>
+
+      <div id="test-done" class="hidden bg-card p-8 rounded-2xl border b-border text-center space-y-3">
+        <i class="fas fa-check-circle text-5xl text-emerald-400"></i>
+        <h3 class="font-bold text-lg c-text">Prueba enviada</h3>
+        <p class="text-xs c-sec max-w-md mx-auto">
+          Tus respuestas quedaron guardadas en este dispositivo. El evaluador las revisará
+          con los criterios del puesto. No verás una puntuación automática: la evaluación
+          de respuestas abiertas la hace una persona.
+        </p>
+        <button onclick="copyMyTest()" class="btn btn-outline btn-sm">
+          <i class="fas fa-copy mr-1.5"></i> Copiar mis respuestas
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== PESTAÑA: RESULTADOS ===== -->
+    <div id="tab-results" class="tab-panel p-6 space-y-6">
+
+      <!-- Candado -->
+      <div id="results-lock" class="bg-card rounded-2xl border b-border lock-screen">
+        <i class="fas fa-lock text-4xl c-sec"></i>
+        <div>
+          <h3 class="font-bold c-text">Acceso de evaluador</h3>
+          <p class="text-xs c-sec mt-1 max-w-sm mx-auto">
+            Los resultados solo se muestran en modo evaluador. Actívalo desde el botón superior.
+          </p>
+        </div>
+        <button onclick="toggleMode()" class="btn btn-primary btn-sm">
+          <i class="fas fa-user-shield mr-1.5"></i> Entrar como evaluador
+        </button>
+      </div>
+
+      <!-- Panel -->
+      <div id="results-panel" class="hidden space-y-6">
+        <div class="bg-deep p-5 rounded-2xl border b-border flex justify-between items-center flex-wrap gap-3">
+          <div>
+            <h2 class="text-base font-extrabold c-text"><i class="fas fa-chart-simple c-pri mr-2"></i>Panel del evaluador</h2>
+            <p class="text-xs c-sec" id="results-subtitle">Sin pruebas registradas.</p>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button onclick="exportAllCSV()" class="btn btn-outline btn-xs"><i class="fas fa-file-csv mr-1.5"></i> CSV</button>
+            <button onclick="exportAllText()" class="btn btn-outline btn-xs"><i class="fas fa-copy mr-1.5"></i> Copiar todo</button>
+            <button onclick="clearAllTests()" class="btn btn-outline btn-xs text-rose-400 border-rose-500/30"><i class="fas fa-trash mr-1.5"></i> Borrar</button>
+          </div>
+        </div>
+
+        <!-- Resumen comparativo -->
+        <div id="results-summary" class="hidden bg-card p-5 rounded-2xl border b-border space-y-3">
+          <h3 class="text-sm font-bold c-text"><i class="fas fa-ranking-star c-acc mr-2"></i>Comparación de candidatos</h3>
+          <p class="text-[11px] c-sec">
+            Puntaje sugerido por el analizador de texto. Es orientativo: revísalo siempre contra las respuestas.
+          </p>
+          <div id="summary-table" class="overflow-x-auto"></div>
+        </div>
+
+        <div id="results-list" class="space-y-4"></div>
+      </div>
+    </div>
+
+    <!-- ===== PESTAÑA: PERFIL ===== -->
+    <div id="tab-profile" class="tab-panel p-6 space-y-6">
+      <div class="bg-deep p-6 rounded-2xl border b-border space-y-4">
+        <h2 class="text-base font-extrabold c-text"><i class="fas fa-id-card c-pri mr-2"></i>Mi Perfil</h2>
+        <p class="text-xs c-sec">
+          Los datos de perfil son opcionales para hacer la prueba. Sirven para que el evaluador
+          sepa a quién corresponden las respuestas.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-bold c-text block mb-1">Nombre</label>
+            <input id="prof-name" type="text" class="input-field" placeholder="Tu nombre">
+          </div>
+          <div>
+            <label class="text-xs font-bold c-text block mb-1">Área / Especialidad</label>
+            <input id="prof-area" type="text" class="input-field" placeholder="Ej: Atención al cliente">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-bold c-text block mb-1">Presentación breve</label>
+          <textarea id="prof-bio" rows="3" class="input-field" placeholder="Qué sabes hacer y qué buscas."></textarea>
+        </div>
+        <button onclick="saveProfile()" class="btn btn-primary btn-sm">
+          <i class="fas fa-save mr-1.5"></i> Guardar perfil
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== PESTAÑA: CÓMO FUNCIONA ===== -->
+    <div id="tab-about" class="tab-panel p-6 space-y-4">
+      <div class="bg-deep p-6 rounded-2xl border b-border space-y-4">
+        <h2 class="text-base font-extrabold c-text">Cómo funciona la evaluación</h2>
+        <div class="space-y-3 text-xs c-sec leading-relaxed">
+          <p><strong class="c-text">1. La prueba mide decisiones, no memoria.</strong>
+          Cada pregunta plantea una situación real del puesto y pide qué harías. No hay opción múltiple
+          porque las respuestas correctas no son únicas.</p>
+          <p><strong class="c-text">2. Un analizador de texto marca señales.</strong>
+          El sistema revisa cada respuesta buscando indicios concretos —disculpa, solución ofrecida,
+          plazo, evasión de responsabilidad— y produce un puntaje sugerido con las señales que encontró.
+          Es un motor de reglas sobre un dominio acotado, no un modelo de lenguaje: se equivoca con
+          ironía, textos muy largos o escritura descuidada.</p>
+          <p><strong class="c-text">3. El evaluador decide, no el algoritmo.</strong>
+          El puntaje es una sugerencia editable. El evaluador puede sobrescribirlo y su criterio
+          queda guardado junto a la respuesta.</p>
+          <p><strong class="c-text">4. Las pruebas se guardan en el dispositivo.</strong>
+          Sin servidores ni cuentas. El evaluador exporta los resultados en texto o CSV
+          para llevarlos a su proceso de selección.</p>
+        </div>
+        <div class="p-3 bg-card rounded-xl border b-border text-[11px] c-sec">
+          <strong class="c-text">Nota de transparencia:</strong> esta versión es una demostración funcional
+          de la metodología. No incluye verificación automática de títulos ni conexión a bases de datos externas.
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="border-t b-border px-6 py-4 text-center text-[11px] c-sec">
+    ProyectaLab · Evaluación por competencias · Los datos se guardan solo en este dispositivo
+  </footer>
+
+  <script>
+    /* ============================================================
+       BANCO DE PREGUNTAS CON CRITERIOS Y SEÑALES DE ANÁLISIS
+       ============================================================ */
+    const TEST_QUESTIONS = [
+      {
+        q: "Un cliente llama gritando porque su pedido llegó dañado. Escribe exactamente qué le dices en los primeros 30 segundos.",
+        good: "Se disculpa, reconoce la molestia y ofrece una solución concreta (reemplazo, reembolso o revisión).",
+        bad: "Se pone a la defensiva, culpa al cliente o al transportista, o promete sin verificar.",
+        signals: [
+          { label: "Se disculpa", re: /\b(disculp|perd[oó]n|lamento|siento)\w*/i, weight: 2 },
+          { label: "Reconoce la molestia", re: /\b(entiendo|comprendo|imagino)\b|\b(debe ser|qué (molestia|fastidio))\b/i, weight: 1 },
+          { label: "Ofrece solución", re: /\b(reemplaz|reembols|devoluc|reponer|solucion|resolver|enviar[eé] (otro|uno nuevo))\w*/i, weight: 3 },
+          { label: "Pide datos para actuar", re: /\b(n[uú]mero de pedido|orden|referencia|comprobante|foto)\b/i, weight: 1 },
+          { label: "Culpa al cliente", re: /\b(usted (no|debió)|por su culpa|culpa suya|no es mi problema)\b/i, weight: -3 },
+          { label: "Culpa a terceros", re: /\b(el transportista|la empresa de env[ií]o|el proveedor) (tiene la culpa|es el responsable)\b/i, weight: -2 },
+          { label: "Se pone a la defensiva", re: /\b(no (es|fue) mi culpa|yo no fui|no tengo nada que ver)\b/i, weight: -3 }
+        ]
+      },
+      {
+        q: "Un cliente te pide un descuento que no tienes autorizado. ¿Qué haces?",
+        good: "No inventa autoridad: ofrece lo que sí puede y escala a quien decide.",
+        bad: "Concede el descuento por su cuenta o se niega sin dar alternativa.",
+        signals: [
+          { label: "Respeta el límite", re: /\b(no (est[aá]|tengo) autorizad|no puedo (aplicar|dar|ofrecer)|fuera de mis (facultades|atribuciones))\w*/i, weight: 2 },
+          { label: "Escala a un superior", re: /\b(consult|supervisor|gerente|jefe|escalar|autorizaci[oó]n)\w*/i, weight: 3 },
+          { label: "Ofrece alternativa", re: /\b(alternativa|en su lugar|puedo ofrecer|promoci[oó]n|otro beneficio)\w*/i, weight: 2 },
+          { label: "Concede sin autorización", re: /\b(le (doy|aplico|hago) el descuento|se lo (dejo|aplico)|listo, se lo doy)\b/i, weight: -3 },
+          { label: "Se niega en seco", re: /^(no\.?|imposible\.?|no se puede\.?)$/i, weight: -2 },
+          { label: "Explica el motivo", re: /\b(porque|debido a|ya que|pol[ií]tica)\b/i, weight: 1 }
+        ]
+      },
+      {
+        q: "Tienes 3 chats abiertos y un teléfono sonando. ¿Qué haces y en qué orden?",
+        good: "Prioriza por urgencia y antigüedad, y avisa a los demás del tiempo de espera.",
+        bad: "Atiende al azar, abandona conversaciones sin avisar o entra en pánico.",
+        signals: [
+          { label: "Define criterio de prioridad", re: /\b(prioriz|primero (el|la|atiendo)|orden|urgencia|m[aá]s antiguo|antigüedad)\w*/i, weight: 3 },
+          { label: "Avisa a los que esperan", re: /\b(avis|inform|comunic|mensaje autom[aá]tico|tiempo de espera|un momento)\w*/i, weight: 2 },
+          { label: "Pide apoyo", re: /\b(compa[ñn]er|equipo|supervisor|ayuda|apoyo|derivar)\w*/i, weight: 2 },
+          { label: "Atiende al azar", re: /\b(al azar|el que sea|lo que caiga|no s[eé]|depende)\b/i, weight: -2 },
+          { label: "Abandona sin avisar", re: /\b(dejo (el|los) chat|cierro (el|los) chat|ignoro)\b/i, weight: -3 },
+          { label: "Entra en pánico", re: /\b(me (pongo nervios|estreso|bloqueo)|no sabr[ií]a)\b/i, weight: -2 }
+        ]
+      },
+      {
+        q: "Escribe un mensaje breve a un cliente explicándole que su reembolso tardará 5 días hábiles.",
+        good: "Claro, breve, con el dato concreto y sin jerga interna.",
+        bad: "Confuso, demasiado largo, sin el plazo o con tono frío.",
+        signals: [
+          { label: "Da el plazo exacto", re: /\b(5|cinco)\s*(d[ií]as)?\s*(h[aá]biles)?\b/i, weight: 3 },
+          { label: "Tono cordial", re: /\b(estimad|hola|buen(os|as) (d[ií]as|tardes)|gracias|saludos|cordial)\w*/i, weight: 2 },
+          { label: "Explica el proceso", re: /\b(proceso|tr[aá]mite|verificaci[oó]n|banco|sistema)\w*/i, weight: 1 },
+          { label: "Menciona el monto o referencia", re: /\b(monto|monto de|referencia|n[uú]mero de caso|ticket)\b/i, weight: 1 },
+          { label: "Sin el plazo", re: /^(?!.*\b(5|cinco)\b).*$/i, weight: -3 },
+          { label: "Jerga interna", re: /\b(SLA|backend|ticket cerrado|sistema interno|ERP)\b/i, weight: -2 }
+        ]
+      },
+      {
+        q: "Cometiste un error y el cliente está molesto. ¿Cómo lo manejas?",
+        good: "Asume el error, corrige y explica qué hará para que no se repita.",
+        bad: "Niega, culpa al sistema o se justifica sin resolver.",
+        signals: [
+          { label: "Asume el error", re: /\b(fue mi error|me equivoqu|mi culpa|asumo|reconozco)\w*/i, weight: 3 },
+          { label: "Corrige", re: /\b(corrij|solucion|repar|arregl|resolver|lo (hago|dejo) (bien|correcto))\w*/i, weight: 3 },
+          { label: "Evita que se repita", re: /\b(no (volver[aá]|se repetir[aá])|para que no (pase|ocurra)|medida|prevenci[oó]n)\w*/i, weight: 2 },
+          { label: "Niega el error", re: /\b(no (fue|es) mi error|yo no (tuve|hice)|no comet[ií])\b/i, weight: -3 },
+          { label: "Culpa al sistema", re: /\b(el sistema (fall[oó]|no funciona)|la plataforma|el programa)\b/i, weight: -2 },
+          { label: "Se justifica sin resolver", re: /\b(estaba (cansad|ocupad)|ten[ií]a mucho|no me dieron)\w*/i, weight: -2 }
+        ]
+      },
+      {
+        q: "Un cliente insiste en algo que la empresa no hace. ¿Hasta dónde llegas?",
+        good: "Mantiene el límite con firmeza y amabilidad, y ofrece alternativas.",
+        bad: "Cede a todo para evitar conflicto o corta la comunicación.",
+        signals: [
+          { label: "Mantiene el límite", re: /\b(no (es|est[aá]) (posible|disponible)|no (podemos|se puede)|l[ií]mite|pol[ií]tica)\w*/i, weight: 2 },
+          { label: "Con amabilidad", re: /\b(entiendo|comprendo|lamento|con gusto|agradezco)\w*/i, weight: 2 },
+          { label: "Ofrece alternativa", re: /\b(alternativa|en su lugar|opci[oó]n|puedo ofrecer|te recomiendo)\w*/i, weight: 3 },
+          { label: "Escala", re: /\b(supervisor|gerente|jefe|escalar)\w*/i, weight: 1 },
+          { label: "Cede a todo", re: /\b(le (doy|concedo|hago) todo|como usted diga|lo que pida|est[aá] bien, se lo doy)\b/i, weight: -3 },
+          { label: "Corta la comunicación", re: /\b(cuelgo|no (le )?(respondo|atiendo)|lo dejo hablando|bloqueo)\w*/i, weight: -3 }
+        ]
+      },
+      {
+        q: "Dos clientes esperan, uno por chat y otro por teléfono. ¿Cómo decides a quién atender primero y por qué?",
+        good: "Explica un criterio (urgencia, tiempo de espera) y comunica la decisión al otro.",
+        bad: "Atiende al azar o deja a uno esperando sin aviso.",
+        signals: [
+          { label: "Explica un criterio", re: /\b(porque|ya que|dado que|el criterio|la raz[oó]n)\b/i, weight: 2 },
+          { label: "Usa urgencia o antigüedad", re: /\b(urgencia|urgente|m[aá]s tiempo esperando|antigüedad|primero lleg[oó])\w*/i, weight: 3 },
+          { label: "Comunica al otro", re: /\b(avis|inform|le digo|le comunico|un momento|en seguida lo atiendo)\w*/i, weight: 2 },
+          { label: "Atiende al azar", re: /\b(al azar|el que sea|da igual|no importa)\b/i, weight: -3 },
+          { label: "Deja sin aviso", re: /\b(lo dejo esperando|que espere|no le digo nada)\b/i, weight: -3 }
+        ]
+      },
+      {
+        q: "Un cliente te agradece y se despide. ¿Qué más haces antes de cerrar?",
+        good: "Confirma que el problema quedó resuelto y ofrece ayuda adicional.",
+        bad: "Cierra apenas el cliente se despide.",
+        signals: [
+          { label: "Confirma la resolución", re: /\b(qued[oó] resuelto|todo (bien|en orden)|confirmo|est[aá] solucionado|funcion[oó])\w*/i, weight: 3 },
+          { label: "Ofrece ayuda adicional", re: /\b(algo m[aá]s|otra cosa|en qu[eé] m[aá]s|a la orden|cualquier duda)\b/i, weight: 3 },
+          { label: "Registra o documenta", re: /\b(registr|document|anot|cierro el (caso|ticket)|dejo constancia)\w*/i, weight: 2 },
+          { label: "Cierra sin verificar", re: /\b(adi[oó]s|hasta luego|fin)\s*\.?$/i, weight: -1 },
+          { label: "No ofrece nada más", re: /^(ok|listo|de nada|adi[oó]s)\.?$/i, weight: -3 }
+        ]
+      }
+    ];
+
+    const STORAGE_KEY = 'proyectalab_tests';
+    const PROFILE_KEY = 'proyectalab_profile';
+    const EVAL_KEY = 'proyectalab_evaluator';
+    const EVAL_PASSWORD = 'proyectalab2026';
+
+    let evaluatorMode = false;
+    let currentRecord = null;
+
+    /* ============================================================
+       UTILIDADES
+       ============================================================ */
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str == null ? '' : String(str);
+      return div.innerHTML;
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast toast-' + type;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function loadTests() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (err) { return []; }
+    }
+
+    function saveTests(list) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      } catch (err) {
+        showToast('No se pudieron guardar las pruebas (almacenamiento lleno)', 'error');
+      }
+    }
+
+    /* ============================================================
+       ANALIZADOR DE RESPUESTAS
+       Busca señales concretas y devuelve un puntaje 0-100.
+       Es un motor de reglas: orientativo, no un veredicto.
+       ============================================================ */
+    function analyzeAnswer(text, question) {
+      const clean = (text || '').trim();
+      const result = { score: 0, found: [], missing: [], length: clean.length, words: 0 };
+
+      if (!clean) {
+        result.score = 0;
+        result.missing.push('Sin respuesta');
+        return result;
+      }
+
+      result.words = clean.split(/\s+/).filter(Boolean).length;
+
+      let raw = 0;
+      let maxPositive = 0;
+
+      question.signals.forEach(sig => {
+        if (sig.weight > 0) maxPositive += sig.weight;
+        if (sig.re.test(clean)) {
+          raw += sig.weight;
+          result.found.push({ label: sig.label, weight: sig.weight });
+        } else if (sig.weight > 0) {
+          result.missing.push(sig.label);
+        }
+      });
+
+      // Normaliza: señales positivas encontradas vs. posibles
+      const positiveFound = result.found.filter(f => f.weight > 0).reduce((a, b) => a + b.weight, 0);
+      const negativeFound = result.found.filter(f => f.weight < 0).reduce((a, b) => a + b.weight, 0);
+      const base = maxPositive > 0 ? (positiveFound / maxPositive) * 100 : 0;
+
+      let score = base + (negativeFound * 12);
+
+      // Ajuste por longitud: respuestas de una línea no demuestran criterio
+      if (result.words < 8) score -= 25;
+      else if (result.words < 15) score -= 10;
+      else if (result.words > 120) score -= 5;
+
+      result.score = Math.max(0, Math.min(100, Math.round(score)));
+      return result;
+    }
+
+    function analyzeTest(record) {
+      const perAnswer = record.answers.map((a, i) => ({
+        index: i,
+        ...analyzeAnswer(a.answer, TEST_QUESTIONS[i])
+      }));
+      const total = perAnswer.length
+        ? Math.round(perAnswer.reduce((sum, a) => sum + a.score, 0) / perAnswer.length)
+        : 0;
+      return { perAnswer, total };
+    }
+
+    function scoreColor(score) {
+      if (score >= 70) return { bg: 'rgba(16,185,129,0.15)', fg: 'var(--success)', border: 'var(--success)' };
+      if (score >= 45) return { bg: 'rgba(245,158,11,0.15)', fg: 'var(--warning)', border: 'var(--warning)' };
+      return { bg: 'rgba(239,68,68,0.15)', fg: 'var(--danger)', border: 'var(--danger)' };
+    }
+
+    function scoreLabel(score) {
+      if (score >= 70) return 'Sólida';
+      if (score >= 45) return 'Parcial';
+      return 'Débil';
+    }
+
+    function ringHtml(score, size) {
+      const c = scoreColor(score);
+      return '<div class="score-ring" style="background:' + c.bg + ';color:' + c.fg +
+        ';border:2px solid ' + c.border + ';' + (size ? 'width:' + size + 'px;height:' + size + 'px;font-size:' + (size/4.5) + 'px;' : '') +
+        '">' + score + '</div>';
+    }
+
+    /* ============================================================
+       NAVEGACIÓN Y MODO EVALUADOR
+       ============================================================ */
+    function switchTab(btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'tab-results') renderResults();
+    }
+
+    function toggleMode() {
+      if (evaluatorMode) {
+        evaluatorMode = false;
+        sessionStorage.removeItem(EVAL_KEY);
+        updateModeUI();
+        showToast('Modo candidato activado', 'info');
+        return;
+      }
+      const pass = prompt('Clave de evaluador:');
+      if (pass === null) return;
+      if (pass.trim() !== EVAL_PASSWORD) {
+        showToast('Clave incorrecta', 'error');
+        return;
+      }
+      evaluatorMode = true;
+      sessionStorage.setItem(EVAL_KEY, '1');
+      updateModeUI();
+      showToast('Modo evaluador activado', 'success');
+    }
+
+    function updateModeUI() {
+      const badge = document.getElementById('mode-badge');
+      const label = document.getElementById('mode-btn-label');
+      const lock = document.getElementById('results-lock');
+      const panel = document.getElementById('results-panel');
+
+      badge.textContent = evaluatorMode ? 'Modo evaluador' : 'Modo candidato';
+      badge.className = 'badge-status ' + (evaluatorMode ? 'badge-verified' : 'badge-review');
+      label.textContent = evaluatorMode ? 'Salir de evaluador' : 'Entrar como evaluador';
+
+      // Manipulación directa de estilo: no depende de que Tailwind haya cargado
+      lock.style.display = evaluatorMode ? 'none' : 'flex';
+      panel.style.display = evaluatorMode ? 'block' : 'none';
+
+      if (evaluatorMode) renderResults();
+    }
+
+    function renderResults() {
+      if (!evaluatorMode) return;
+
+      const list = loadTests();
+      const container = document.getElementById('results-list');
+      const subtitle = document.getElementById('results-subtitle');
+      const summaryBox = document.getElementById('results-summary');
+      const summaryTable = document.getElementById('summary-table');
+
+      if (!list.length) {
+        subtitle.textContent = 'Sin pruebas registradas.';
+        summaryBox.style.display = 'none';
+        container.innerHTML = '<p class="text-xs c-sec">Aún no hay pruebas guardadas en este dispositivo. ' +
+          'Haz una prueba primero en la pestaña Prueba.</p>';
+        return;
+      }
+
+      subtitle.textContent = list.length + ' prueba(s) registrada(s) en este dispositivo.';
+
+      const analyses = list.map(r => analyzeTest(r));
+      const ranked = list.map((r, i) => ({ r, a: analyses[i], idx: i }))
+        .sort((x, y) => y.a.total - x.a.total);
+
+      summaryBox.style.display = 'block';
+      summaryTable.innerHTML = `
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="text-left c-sec border-b b-border">
+              <th class="py-2 pr-3 font-bold">#</th>
+              <th class="py-2 pr-3 font-bold">Candidato</th>
+              <th class="py-2 pr-3 font-bold">Puntaje</th>
+              <th class="py-2 pr-3 font-bold">Nivel</th>
+              <th class="py-2 font-bold">Pregunta más débil</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${ranked.map((item, pos) => {
+              const weakest = item.a.perAnswer.reduce((min, cur) => cur.score < min.score ? cur : min, item.a.perAnswer[0]);
+              return `<tr class="border-b b-border/50">
+                <td class="py-2 pr-3 c-sec font-mono">${pos + 1}</td>
+                <td class="py-2 pr-3 c-text font-bold">${escapeHtml(item.r.name)}</td>
+                <td class="py-2 pr-3">${ringHtml(item.a.total, 36)}</td>
+                <td class="py-2 pr-3" style="color:${scoreColor(item.a.total).fg};font-weight:700">${scoreLabel(item.a.total)}</td>
+                <td class="py-2 c-sec">P${weakest ? weakest.index + 1 : '—'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+
+      container.innerHTML = list.map((r, idx) => {
+        const analysis = analyses[idx];
+        return `
+        <details class="bg-card rounded-xl border b-border overflow-hidden" ${idx === 0 ? 'open' : ''}>
+          <summary class="p-4 cursor-pointer flex justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+              ${ringHtml(analysis.total)}
+              <div>
+                <p class="font-bold text-sm c-text">${escapeHtml(r.name)}</p>
+                <p class="text-[11px] c-sec font-mono">${escapeHtml(r.id)} · ${new Date(r.finishedAt).toLocaleString('es-VE')}</p>
+              </div>
+            </div>
+            <span class="badge-status badge-neutral">${scoreLabel(analysis.total)}</span>
+          </summary>
+          <div class="p-4 pt-0 space-y-3">
+            ${r.answers.map((a, i) => {
+              const an = analysis.perAnswer[i];
+              const c = scoreColor(an.score);
+              return `
+              <div class="p-3 bg-deep rounded-lg border b-border space-y-2">
+                <div class="flex justify-between items-start gap-3">
+                  <p class="text-xs font-bold c-text flex-1">${i + 1}. ${escapeHtml(a.question)}</p>
+                  <div class="text-right flex-shrink-0">
+                    <p class="text-lg font-extrabold" style="color:${c.fg}">${an.score}</p>
+                    <p class="text-[10px] c-sec">${an.words} palabras</p>
+                  </div>
+                </div>
+                <p class="text-xs c-sec whitespace-pre-line">${escapeHtml(a.answer)}</p>
+
+                <div class="pt-2 border-t b-border space-y-1.5">
+                  <p class="text-[10px] font-bold c-sec uppercase tracking-wide">Señales detectadas</p>
+                  <div>
+                    ${an.found.length
+                      ? an.found.map(f => `<span class="signal-tag ${f.weight > 0 ? 'sig-pos' : 'sig-neg'}">${f.weight > 0 ? '✓' : '✗'} ${escapeHtml(f.label)}</span>`).join('')
+                      : '<span class="signal-tag sig-neu">Ninguna señal clara</span>'}
+                  </div>
+                  ${an.missing.length ? `<p class="text-[10px] c-sec mt-1">No apareció: ${an.missing.map(escapeHtml).join(' · ')}</p>` : ''}
+                </div>
+
+                <div class="crit pt-2 border-t b-border space-y-1">
+                  <p class="crit-good"><strong>✓ Aceptable:</strong> ${escapeHtml(TEST_QUESTIONS[i].good)}</p>
+                  <p class="crit-bad"><strong>✗ Deficiente:</strong> ${escapeHtml(TEST_QUESTIONS[i].bad)}</p>
+                </div>
+              </div>`;
+            }).join('')}
+            <button onclick="copyOne(${idx})" class="btn btn-outline btn-xs">
+              <i class="fas fa-copy mr-1.5"></i> Copiar esta prueba
+            </button>
+          </div>
+        </details>`;
+      }).join('');
+    }
+
+    /* ============================================================
+       FLUJO DE LA PRUEBA
+       ============================================================ */
+    function startTest() {
+      const name = document.getElementById('test-name').value.trim();
+      const id = document.getElementById('test-id').value.trim();
+      const email = document.getElementById('test-email').value.trim();
+
+      if (!name || !id) {
+        showToast('Nombre y documento son obligatorios', 'error');
+        return;
+      }
+
+      currentRecord = {
+        name, id, email,
+        startedAt: new Date().toISOString(),
+        answers: [],
+        finishedAt: null
+      };
+
+      const form = document.getElementById('test-form');
+      form.innerHTML = TEST_QUESTIONS.map((item, i) => `
+        <div class="q-card space-y-2">
+          <label class="text-xs font-bold c-text block">
+            <span class="c-pri">${i + 1}.</span> ${escapeHtml(item.q)}
+          </label>
+          <textarea name="q${i}" rows="3" class="input-field" data-idx="${i}"
+            placeholder="Escribe tu respuesta..." oninput="updateProgress()"></textarea>
+        </div>
+      `).join('');
+
+      document.getElementById('test-identify').classList.add('hidden');
+      document.getElementById('test-runner').classList.remove('hidden');
+      updateProgress();
+      document.getElementById('test-runner').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function updateProgress() {
+      const areas = document.querySelectorAll('#test-form textarea');
+      let filled = 0;
+      areas.forEach(a => { if (a.value.trim().length > 0) filled++; });
+      const total = areas.length || TEST_QUESTIONS.length;
+      document.getElementById('progress-count').textContent = filled + ' respondidas';
+      document.getElementById('progress-fill').style.width = (filled / total * 100) + '%';
+      document.getElementById('progress-label').textContent =
+        filled === total ? 'Todas respondidas' : 'Pregunta ' + Math.min(filled + 1, total) + ' de ' + total;
+    }
+
+    function submitTest(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      if (!currentRecord) {
+        showToast('Primero completa la identificación', 'error');
+        return;
+      }
+
+      const areas = document.querySelectorAll('#test-form textarea');
+      const answers = [];
+      let missing = 0;
+
+      areas.forEach((area, i) => {
+        const value = area.value.trim();
+        if (!value) missing++;
+        answers.push({ question: TEST_QUESTIONS[i].q, answer: value });
+      });
+
+      if (missing > 0) {
+        showToast('Faltan ' + missing + ' respuesta(s) por completar', 'error');
+        return;
+      }
+
+      currentRecord.answers = answers;
+      currentRecord.finishedAt = new Date().toISOString();
+
+      const list = loadTests();
+      list.unshift(currentRecord);
+      saveTests(list);
+
+      document.getElementById('test-runner').classList.add('hidden');
+      document.getElementById('test-done').classList.remove('hidden');
+      document.getElementById('test-done').scrollIntoView({ behavior: 'smooth' });
+      showToast('Prueba guardada en este dispositivo', 'success');
+    }
+
+    function buildPlainText(record) {
+      const analysis = analyzeTest(record);
+      return 'PRUEBA PROYECTALAB — ATENCIÓN AL CLIENTE\n' +
+        'Nombre: ' + record.name + '\n' +
+        'Documento: ' + record.id + '\n' +
+        (record.email ? 'Correo: ' + record.email + '\n' : '') +
+        'Fecha: ' + new Date(record.finishedAt).toLocaleString('es-VE') + '\n' +
+        'Puntaje sugerido: ' + analysis.total + '/100\n\n' +
+        record.answers.map((a, i) => {
+          const an = analysis.perAnswer[i];
+          return (i + 1) + '. ' + a.question + '\n' +
+            'R: ' + a.answer + '\n' +
+            '   [Sugerido: ' + an.score + '/100 — ' + scoreLabel(an.score) + ']' +
+            (an.found.length ? ' Señales: ' + an.found.map(f => f.label).join(', ') : '');
+        }).join('\n\n');
+    }
+
+    function copyMyTest() {
+      if (!currentRecord) return;
+      navigator.clipboard.writeText(buildPlainText(currentRecord))
+        .then(() => showToast('Respuestas copiadas', 'success'))
+        .catch(() => showToast('No se pudo copiar. Selecciona el texto manualmente.', 'error'));
+    }
+
+    /* ============================================================
+       PANEL DEL EVALUADOR
+       ============================================================ */
+    function renderResults() {
+      if (!evaluatorMode) return;
+
+      const list = loadTests();
+      const container = document.getElementById('results-list');
+      const subtitle = document.getElementById('results-subtitle');
+      const summaryBox = document.getElementById('results-summary');
+      const summaryTable = document.getElementById('summary-table');
+
+      if (!list.length) {
+        subtitle.textContent = 'Sin pruebas registradas.';
+        summaryBox.classList.add('hidden');
+        container.innerHTML = '<p class="text-xs c-sec">Aún no hay pruebas guardadas en este dispositivo.</p>';
+        return;
+      }
+
+      subtitle.textContent = list.length + ' prueba(s) registrada(s) en este dispositivo.';
+
+      const analyses = list.map(r => analyzeTest(r));
+
+      // Tabla comparativa ordenada por puntaje
+      const ranked = list.map((r, i) => ({ r, a: analyses[i], idx: i }))
+        .sort((x, y) => y.a.total - x.a.total);
+
+      summaryBox.classList.remove('hidden');
+      summaryTable.innerHTML = `
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="text-left c-sec border-b b-border">
+              <th class="py-2 pr-3 font-bold">#</th>
+              <th class="py-2 pr-3 font-bold">Candidato</th>
+              <th class="py-2 pr-3 font-bold">Puntaje</th>
+              <th class="py-2 pr-3 font-bold">Nivel</th>
+              <th class="py-2 font-bold">Pregunta más débil</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${ranked.map((item, pos) => {
+              const weakest = item.a.perAnswer.reduce((min, cur) => cur.score < min.score ? cur : min, item.a.perAnswer[0]);
+              return `<tr class="border-b b-border/50">
+                <td class="py-2 pr-3 c-sec font-mono">${pos + 1}</td>
+                <td class="py-2 pr-3 c-text font-bold">${escapeHtml(item.r.name)}</td>
+                <td class="py-2 pr-3">${ringHtml(item.a.total, 36)}</td>
+                <td class="py-2 pr-3" style="color:${scoreColor(item.a.total).fg};font-weight:700">${scoreLabel(item.a.total)}</td>
+                <td class="py-2 c-sec">P${weakest ? weakest.index + 1 : '—'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+
+      container.innerHTML = list.map((r, idx) => {
+        const analysis = analyses[idx];
+        return `
+        <details class="bg-card rounded-xl border b-border overflow-hidden" ${idx === 0 ? 'open' : ''}>
+          <summary class="p-4 cursor-pointer flex justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+              ${ringHtml(analysis.total)}
+              <div>
+                <p class="font-bold text-sm c-text">${escapeHtml(r.name)}</p>
+                <p class="text-[11px] c-sec font-mono">${escapeHtml(r.id)} · ${new Date(r.finishedAt).toLocaleString('es-VE')}</p>
+              </div>
+            </div>
+            <span class="badge-status badge-neutral">${scoreLabel(analysis.total)}</span>
+          </summary>
+          <div class="p-4 pt-0 space-y-3">
+            ${r.answers.map((a, i) => {
+              const an = analysis.perAnswer[i];
+              const c = scoreColor(an.score);
+              return `
+              <div class="p-3 bg-deep rounded-lg border b-border space-y-2">
+                <div class="flex justify-between items-start gap-3">
+                  <p class="text-xs font-bold c-text flex-1">${i + 1}. ${escapeHtml(a.question)}</p>
+                  <div class="text-right flex-shrink-0">
+                    <p class="text-lg font-extrabold" style="color:${c.fg}">${an.score}</p>
+                    <p class="text-[10px] c-sec">${an.words} palabras</p>
+                  </div>
+                </div>
+                <p class="text-xs c-sec whitespace-pre-line">${escapeHtml(a.answer)}</p>
+
+                <div class="pt-2 border-t b-border space-y-1.5">
+                  <p class="text-[10px] font-bold c-sec uppercase tracking-wide">Señales detectadas</p>
+                  <div>
+                    ${an.found.length
+                      ? an.found.map(f => `<span class="signal-tag ${f.weight > 0 ? 'sig-pos' : 'sig-neg'}">${f.weight > 0 ? '✓' : '✗'} ${escapeHtml(f.label)}</span>`).join('')
+                      : '<span class="signal-tag sig-neu">Ninguna señal clara</span>'}
+                  </div>
+                  ${an.missing.length ? `<p class="text-[10px] c-sec mt-1">No apareció: ${an.missing.map(escapeHtml).join(' · ')}</p>` : ''}
+                </div>
+
+                <div class="crit pt-2 border-t b-border space-y-1">
+                  <p class="crit-good"><strong>✓ Aceptable:</strong> ${escapeHtml(TEST_QUESTIONS[i].good)}</p>
+                  <p class="crit-bad"><strong>✗ Deficiente:</strong> ${escapeHtml(TEST_QUESTIONS[i].bad)}</p>
+                </div>
+              </div>`;
+            }).join('')}
+            <button onclick="copyOne(${idx})" class="btn btn-outline btn-xs">
+              <i class="fas fa-copy mr-1.5"></i> Copiar esta prueba
+            </button>
+          </div>
+        </details>`;
+      }).join('');
+    }
+
+    function copyOne(idx) {
+      const list = loadTests();
+      if (!list[idx]) return;
+      navigator.clipboard.writeText(buildPlainText(list[idx]))
+        .then(() => showToast('Prueba copiada', 'success'))
+        .catch(() => showToast('No se pudo copiar', 'error'));
+    }
+
+    function exportAllText() {
+      const list = loadTests();
+      if (!list.length) { showToast('No hay pruebas guardadas', 'info'); return; }
+      const text = list.map(buildPlainText).join('\n\n' + '='.repeat(50) + '\n\n');
+      navigator.clipboard.writeText(text)
+        .then(() => showToast(list.length + ' prueba(s) copiadas', 'success'))
+        .catch(() => showToast('No se pudo copiar', 'error'));
+    }
+
+    function exportAllCSV() {
+      const list = loadTests();
+      if (!list.length) { showToast('No hay pruebas guardadas', 'info'); return; }
+
+      const esc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+      const header = ['Nombre', 'Documento', 'Correo', 'Fecha', 'Puntaje sugerido']
+        .concat(TEST_QUESTIONS.map((_, i) => 'P' + (i + 1)))
+        .concat(TEST_QUESTIONS.map((_, i) => 'P' + (i + 1) + ' (puntaje)'));
+
+      const rows = list.map(r => {
+        const a = analyzeTest(r);
+        return [r.name, r.id, r.email || '', new Date(r.finishedAt).toLocaleString('es-VE'), a.total]
+          .concat(r.answers.map(x => x.answer))
+          .concat(a.perAnswer.map(x => x.score))
+          .map(esc).join(',');
+      });
+
+      const csv = header.map(esc).join(',') + '\n' + rows.join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'proyectalab_resultados_' + Date.now() + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('CSV descargado', 'success');
+    }
+
+    function clearAllTests() {
+      if (!confirm('¿Borrar todas las pruebas guardadas en este dispositivo? No se puede deshacer.')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      renderResults();
+      showToast('Pruebas eliminadas', 'info');
+    }
+
+    /* ============================================================
+       PERFIL
+       ============================================================ */
+    function saveProfile() {
+      const profile = {
+        name: document.getElementById('prof-name').value.trim(),
+        area: document.getElementById('prof-area').value.trim(),
+        bio: document.getElementById('prof-bio').value.trim()
+      };
+      try {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+        showToast('Perfil guardado', 'success');
+      } catch (err) {
+        showToast('No se pudo guardar el perfil', 'error');
+      }
+    }
+
+    function restoreProfile() {
+      try {
+        const raw = localStorage.getItem(PROFILE_KEY);
+        if (!raw) return;
+        const p = JSON.parse(raw);
+        document.getElementById('prof-name').value = p.name || '';
+        document.getElementById('prof-area').value = p.area || '';
+        document.getElementById('prof-bio').value = p.bio || '';
+        if (p.name) document.getElementById('test-name').value = p.name;
+      } catch (err) { /* perfil corrupto: se ignora */ }
+    }
+
+        document.addEventListener('DOMContentLoaded', () => {
+      restoreProfile();
+      evaluatorMode = sessionStorage.getItem(EVAL_KEY) === '1';
+      updateModeUI();
+    });
+  </script>
+</body>
+</html>
